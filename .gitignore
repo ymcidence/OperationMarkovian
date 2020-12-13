@@ -134,3 +134,4 @@ result/
 *.ipynb
 
 notebook/
+.idea/
