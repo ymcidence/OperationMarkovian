@@ -66,7 +66,7 @@ class BasicData(object):
         train_data = read_record(train_record)
         test_data = read_record(test_record)
 
-        pos_batch_size = int(self.batch_size * .1)
+        pos_batch_size = int(self.batch_size * .2)
         neg_batch_size = int(self.batch_size - pos_batch_size)
         # noinspection PyUnresolvedReferences
         self.pos_data = iter(train_data.filter(filter_pos).cache().repeat().shuffle(self.meta['train_pos_size']).batch(

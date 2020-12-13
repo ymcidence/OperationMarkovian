@@ -86,7 +86,9 @@ class DataMaker(object):
         test_file_name = os.path.join(ROOT_PATH, 'data', test_file_name)
         test_writer = tf.io.TFRecordWriter(test_file_name)
 
-        for i in self.train_ind:
+        for n, i in enumerate(self.train_ind):
+            if n % 1000 == 0:
+                print(n)
             this_guid = self.guid[i]
             this_label = self.label[i]
             event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid,
@@ -95,7 +97,9 @@ class DataMaker(object):
             _convert(train_writer, event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label,
                      self.max_time)
 
-        for i in self.test_ind:
+        for n, i in self.test_ind:
+            if n % 1000 == 0:
+                print('_' + str(n))
             this_guid = self.guid[i]
             this_label = self.label[i]
             event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid,
