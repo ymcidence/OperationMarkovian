@@ -60,13 +60,21 @@ class DataMaker(object):
         self.raw_data['sessionStartTime1'] = [sess_time[i].hour for i in range(self.event_size)]
 
         self.guid = np.asarray(self.raw_data['guid'].drop_duplicates().values)
-        self.label = np.asarray([self.raw_data[self.raw_data['guid'] == g]['flag'].values[0] for g in self.guid])
+        
+        self.label = self._get_label() #np.asarray([self.raw_data[self.raw_data['guid'] == g]['flag'].values[0] for g in self.guid])
         self.total_size = self.guid.shape[0]
         self.test_size = int(np.floor(self.total_size * self.test_proportion))
         self.training_size = self.total_size - self.test_size
 
         self.mean, self.std = get_mean_std(self.raw_data[FEAT_LIST], FEAT_LIST, NORM_LIST)
         self._split()
+    def _get_label(self):
+        rslt = np.zeros(self.guid.shape[0])
+        for i, g in enumerate(self.guid):
+            if i % 1000 == 0:
+                print(i, g)
+            rslt[] = self.raw_data[self.raw_data['guid']==g]['flag'].values[0])
+        return np.asarray(rslt)
 
     def _split(self):
         np.random.seed(2)
