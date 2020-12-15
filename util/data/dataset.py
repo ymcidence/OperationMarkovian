@@ -54,7 +54,6 @@ class BasicData(object):
     def _load_data(self):
         map_function, filter_pos, filter_neg = self._get_map_function()
 
-
         def read_record(file_name):
             return tf.data.TFRecordDataset(file_name) \
                 .map(map_function, num_parallel_calls=AUTOTUNE) \

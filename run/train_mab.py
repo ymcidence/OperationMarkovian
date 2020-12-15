@@ -22,7 +22,7 @@ def step_train(model: BasicMAB, data: BasicData, opt: tf.optimizers.Optimizer, t
             img = tf.squeeze(att, 2)[0, :, :100]
             tf.summary.scalar('train/loss', loss, step=t)
             tf.summary.image('train/att', img[tf.newaxis, :, :, tf.newaxis], step=t)
-            
+
         step_test(model, data, t)
 
     return loss.numpy()
@@ -57,6 +57,7 @@ def main():
             if (i + 1) % 200 == 0:
                 save_name = os.path.join(save_path, 'ym' + str(i))
                 checkpoint.save(file_prefix=save_name)
+
 
 if __name__ == '__main__':
     main()
