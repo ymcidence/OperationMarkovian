@@ -69,15 +69,15 @@ class BasicData(object):
         pos_batch_size = int(self.batch_size * .2)
         neg_batch_size = int(self.batch_size - pos_batch_size)
         # noinspection PyUnresolvedReferences
-        self.pos_data = iter(train_data.filter(filter_pos).cache().repeat().shuffle(self.meta['train_pos_size']).batch(
+        self.pos_data = iter(train_data.filter(filter_pos).cache().repeat().shuffle(10000).batch(
             pos_batch_size))
         # noinspection PyUnresolvedReferences
-        self.neg_data = iter(train_data.filter(filter_neg).cache().repeat().shuffle(self.meta['train_neg_size']).batch(
+        self.neg_data = iter(train_data.filter(filter_neg).cache().repeat().shuffle(10000).batch(
             neg_batch_size))
 
         if self.training:
             # noinspection PyUnresolvedReferences
-            self.test_data = iter(test_data.cache().repeat().shuffle(self.meta['test_size']).batch(self.batch_size))
+            self.test_data = iter(test_data.cache().repeat().shuffle(1000).batch(self.batch_size))
         else:
             self.test_data = iter(test_data.cache().batch(1))
 

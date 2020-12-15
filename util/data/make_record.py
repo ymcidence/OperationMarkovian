@@ -58,10 +58,10 @@ class DataMaker(object):
         sess_time = self.raw_data['sessionStartTime']
         self.event_size = self.raw_data.shape[0]
         self.raw_data['sessionStartTime1'] = [sess_time[i].hour for i in range(self.event_size)]
-
         self.guid = np.asarray(self.raw_data['guid'].drop_duplicates().values)
+        self.raw_data = self.raw_data.set_index('guid')
         
-        self.label = self._get_label() #np.asarray([self.raw_data[self.raw_data['guid'] == g]['flag'].values[0] for g in self.guid])
+#         self.label = self._get_label() #np.asarray([self.raw_data[self.raw_data['guid'] == g]['flag'].values[0] for g in self.guid])
         self.total_size = self.guid.shape[0]
         self.test_size = int(np.floor(self.total_size * self.test_proportion))
         self.training_size = self.total_size - self.test_size
@@ -73,8 +73,8 @@ class DataMaker(object):
         for i, g in enumerate(self.guid):
             if i % 1000 == 0:
                 print(i, g)
-            rslt[] = self.raw_data[self.raw_data['guid']==g]['flag'].values[0])
-        return np.asarray(rslt)
+            rslt[i] = self.raw_data.loc[g]['flag'].values[0]
+        return rslt
 
     def _split(self):
         np.random.seed(2)
@@ -93,28 +93,36 @@ class DataMaker(object):
         test_file_name = 'test_' + str(self.file_name).replace('.parquet', '.tfrecords')
         test_file_name = os.path.join(ROOT_PATH, 'data', test_file_name)
         test_writer = tf.io.TFRecordWriter(test_file_name)
+        bad_guid = []
 
         for n, i in enumerate(self.train_ind):
-            if n % 1000 == 0:
-                print(n)
+            if n % 500 == 0:
+                print(n, ':', self.guid[i])
             this_guid = self.guid[i]
-            this_label = self.label[i]
-            event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid,
-                                                                                                          this_label)
+            try:
+                event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid)
 
-            _convert(train_writer, event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label,
-                     self.max_time)
-
-        for n, i in self.test_ind:
+                _convert(train_writer, event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label,
+                         self.max_time)
+            
+            except:
+                bad_guid.append(this_guid)
+                
+        for n, i in enumerate(self.test_ind):
             if n % 1000 == 0:
                 print('_' + str(n))
+            if n > 3000: 
+                break
+            
             this_guid = self.guid[i]
-            this_label = self.label[i]
-            event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid,
-                                                                                                          this_label)
+#             this_label = self.label[i]
+            try:
+                event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label = map_function(this_guid)
 
-            _convert(test_writer, event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label,
-                     self.max_time)
+                _convert(test_writer, event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label,
+                         self.max_time)
+            except:
+                bad_guid.append(this_guid)
 
         train_writer.close()
         test_writer.close()
@@ -122,16 +130,13 @@ class DataMaker(object):
         ms_name = os.path.join(ROOT_PATH, 'data', 'ms_' + str(self.file_name).replace('.parquet', '.npy'))
         ms = {'mean': self.mean,
               'std': self.std,
-              'test_size': self.test_ind.__len__(),
-              'train_pos_size': np.where(self.label[self.train_ind] == 1)[0].__len__(),
-              'train_neg_size': np.where(self.label[self.train_ind] == 0)[0].__len__(),
               'max_time': self.max_time,
               'event_type': self.event_type}
         np.save(ms_name, ms)
 
     def _get_map_function(self):
-        def _map_function(guid, label):
-            df: pd.DataFrame = self.raw_data[self.raw_data['guid'] == guid].sort_values('eventTime')
+        def _map_function(guid):
+            df = self.raw_data.loc[guid].sort_values('eventTime')
 
             user_feat = self._process_data(df, USER_FEAT)[0]
             session_feat = self._process_data(df, SESSION_FEAT)[0]
@@ -139,6 +144,8 @@ class DataMaker(object):
 
             event_type = self._trim_or_padding(np.asarray(df['eventType'].values, np.int32))[0]
             event_time = self._process_time(df)[0]
+            label = df['flag'].values[0]
+            
 
             return event_feat, event_type, event_time, session_feat, user_feat, mask, guid, label
 
